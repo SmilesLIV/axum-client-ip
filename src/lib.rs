@@ -9,7 +9,7 @@ use std::{
 };
 
 use axum::{
-    extract::{ConnectInfo, Extension, FromRequestParts},
+    extract::{ConnectInfo, Extension, FromRequestParts, connect_info::MockConnectInfo},
     http::{StatusCode, request::Parts},
     response::{IntoResponse, Response},
 };
@@ -190,6 +190,12 @@ where
                 .extensions
                 .get::<ConnectInfo<SocketAddr>>()
                 .map(|ConnectInfo(addr)| addr.ip())
+                .or_else(|| {
+                    parts
+                        .extensions
+                        .get::<MockConnectInfo<SocketAddr>>()
+                        .map(|MockConnectInfo(addr)| addr.ip())
+                })
                 .ok_or_else(|| Rejection::NoConnectInfo),
             ClientIpSource::FlyClientIp => FlyClientIp::ip_from_headers(&parts.headers),
             #[cfg(feature = "forwarded-header")]
